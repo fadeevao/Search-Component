@@ -12,7 +12,7 @@ public class FrequenciesMapBuilderTest {
 
     @Test
     public void testMapBuilder() throws IOException {
-        HashMap<String, BigDecimal> map = (HashMap<String, BigDecimal>) FrequenciesMapBuilder.getFrequenciesMap("spellcheck/frequencies-test-set.csv");
+        HashMap<String, BigDecimal> map = (HashMap<String, BigDecimal>) new FrequenciesMapBuilder().getFrequenciesMap("/spellcheck/frequencies-test-set.csv");
         assertEquals(5, map.size());
         assertEquals(new BigDecimal("923053"), map.get("men"));
         assertEquals(new BigDecimal("922130"), map.get("own"));

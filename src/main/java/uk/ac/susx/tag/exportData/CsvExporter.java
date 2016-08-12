@@ -11,6 +11,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+Class responsible for creating a csv file with search results that contain a user-entered search term.
+If initially user uploaded a csv as a searchable file, search results will be
+appended to the csv file - rows that contain documents not relevant to the search term will not be included
+ */
 public class CsvExporter {
 
     private List<SearchResult> searchResults;
@@ -24,6 +29,8 @@ public class CsvExporter {
         this.searchResults = searchResults;
         this.searchTerms = query;
     }
+
+    public  CsvExporter() {}
 
     public void writeDataToCsv() throws IOException {
 
@@ -45,13 +52,7 @@ public class CsvExporter {
             }
         } finally {
 
-            try {
-                fileWriter.flush();
-                fileWriter.close();
-                csvFilePrinter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            closeWriterAndFlush(fileWriter, csvFilePrinter);
         }
     }
 
@@ -81,13 +82,17 @@ public class CsvExporter {
             }
         } finally {
 
-            try {
-                fileWriter.flush();
-                fileWriter.close();
-                csvFilePrinter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            closeWriterAndFlush(fileWriter, csvFilePrinter);
+        }
+    }
+
+    private void closeWriterAndFlush(FileWriter fileWriter, CSVPrinter csvFilePrinter) {
+        try {
+            fileWriter.flush();
+            fileWriter.close();
+            csvFilePrinter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -98,16 +103,8 @@ public class CsvExporter {
         }
     }
 
-    public List<SearchResult> getSearchResults() {
-        return searchResults;
-    }
-
     public void setSearchResults(List<SearchResult> searchResults) {
         this.searchResults = searchResults;
-    }
-
-    public String getSearchTerms() {
-        return searchTerms;
     }
 
     public void setSearchTerms(String searchTerms) {

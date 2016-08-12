@@ -1,19 +1,12 @@
 package uk.ac.susx.tag.inputData.tsv;
 
 
-import com.google.common.io.Files;
-import com.univocity.parsers.tsv.TsvParser;
-import com.univocity.parsers.tsv.TsvParserSettings;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.hdfs.server.datanode.fsdataset.RollingLogs;
 import uk.ac.susx.tag.inputData.InputData;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 

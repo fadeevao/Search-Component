@@ -37,6 +37,20 @@ public class CsvReader {
         return new CsvData(messages, csvLines, new ArrayList<>(headers));
     }
 
+    public static CsvData getCsvData(List<File> files, String key, String messageKey) {
+        List<InputData> messages = new ArrayList<>();
+        List<String[]> csvLines = new ArrayList<>();
+        List<String> headers = new ArrayList<>();
+        for (File file : files) {
+            CsvData singleCsv = getCsvData(file, key, messageKey);
+            messages.addAll(singleCsv.getMessages());
+            csvLines.addAll(singleCsv.getCsvLines());
+            headers = singleCsv.getHeaders();
+        }
+        return new CsvData(messages, csvLines, headers);
+
+    }
+
     private  static String[] recordData(CSVRecord record, Set<String> headers) {
         String[] fields = new String[headers.size()];
         for (int i = 0; i< headers.size(); i++) {

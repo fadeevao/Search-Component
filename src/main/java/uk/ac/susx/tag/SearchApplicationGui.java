@@ -29,6 +29,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import uk.ac.susx.tag.exportData.CsvExporter;
 import uk.ac.susx.tag.inputData.FileType;
+import uk.ac.susx.tag.inputData.csv.CsvData;
 import uk.ac.susx.tag.lucenesearch.Indexer;
 import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSuggestion;
 import uk.ac.susx.tag.lucenesearch.result.SearchResult;
@@ -66,8 +67,11 @@ public class SearchApplicationGui extends Application {
     private Button openDirectoryButton;
     private Label directoryMustBeEmptyLabel;
     private boolean exportResultsToCsv;
+    private Button downloadCsv;
 
     private CsvExporter csvExporter;
+    private CsvData csvData;
+    private Scene searchScene;
 
     public static void main(String[] args) {
         launch(args);
@@ -127,13 +131,13 @@ public class SearchApplicationGui extends Application {
             public void handle(ActionEvent event) {
                 File directory = directoryChooser.showDialog(primaryStage);
                 if (directory != null) {
-                    if (directory.list().length != 1) {
-                        inputAdminGrid.add(directoryMustBeEmptyLabel, 1, 0);
-                    } else {
+//                    if (directory.list().length >= 1) {
+//                        inputAdminGrid.add(directoryMustBeEmptyLabel, 1, 0);
+//                    } else {
                         indexDirectoryPath = directory.getPath();
                         inputAdminGrid.getChildren().remove(directoryMustBeEmptyLabel);
                         fileTypeChoiceBox.setDisable(false);
-                    }
+                    //}
                 }
             }
         });
@@ -263,22 +267,19 @@ public class SearchApplicationGui extends Application {
         Button selectDisSemanticsFileButton = new Button("Upload model");
         selectDisSemanticsFileButton.setDisable(true);
         FileChooser disSemanticsFileChooser = new FileChooser();
-        selectDisSemanticsFileButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                File file = disSemanticsFileChooser.showOpenDialog(primaryStage);
-                if (file != null) {
-                    NeighbourProcessor neighbourProcessor = new NeighbourProcessor();
-                    try {
-                        NeighbourSearcher neighbourSearcher = new NeighbourSearcher(neighbourProcessor.buildNeighbourMap(file, numberOfNeighboursToSuggest * 5), numberOfNeighboursToSuggest, separateSpellingSuggestions);
-                        startSearchButton.setDisable(false);
-                        queryBuilder = new QueryBuilder(neighbourSearcher);
-                        disSemanticsModelUploaded = true;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+        selectDisSemanticsFileButton.setOnAction(event -> {
+            File file = disSemanticsFileChooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                NeighbourProcessor neighbourProcessor = new NeighbourProcessor();
+                try {
+                    NeighbourSearcher neighbourSearcher = new NeighbourSearcher(neighbourProcessor.buildNeighbourMap(file, numberOfNeighboursToSuggest * 5), numberOfNeighboursToSuggest, separateSpellingSuggestions);
+                    startSearchButton.setDisable(false);
+                    queryBuilder = new QueryBuilder(neighbourSearcher);
+                    disSemanticsModelUploaded = true;
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+
             }
         });
 
@@ -371,8 +372,8 @@ public class SearchApplicationGui extends Application {
 
 
         BorderPane searchScreen = new BorderPane();
-        TextField textField = new TextField();
-        textField.setPrefWidth(700);
+        TextField userQueryField = new TextField();
+        userQueryField.setPrefWidth(700);
         Button searchButton = new Button("Search!");
         Pane searchScreenRoot = new HBox();
         searchScreenRoot.setPadding(DEFAULT_PADDING);
@@ -381,28 +382,31 @@ public class SearchApplicationGui extends Application {
         Pane searchResultsPane = new VBox();
         searchResultsPane.setPadding(DEFAULT_PADDING);
         searchScreen.setCenter(searchResultsPane);
-        searchButton.setOnAction(event -> performSearch(primaryStage, searchResultsPane, textField));
+        searchButton.setOnAction(event -> performSearch(primaryStage, searchResultsPane, userQueryField));
 
         BorderPane enterScreenRoot = new BorderPane();
         Scene initialScene = new Scene(enterScreenRoot, 800, 500);
-        searchScreenRoot.getChildren().addAll(textField, searchButton);
+        searchScreenRoot.getChildren().addAll(userQueryField, searchButton);
 
         HBox navigationButtonsBox = new HBox();
         navigationButtonsBox.setSpacing(10);
         navigationButtonsBox.setPadding(DEFAULT_PADDING);
         Button backButton = new Button("Start again");
+
         backButton.setOnAction(event -> primaryStage.setScene(initialScene));
         searchScreen.setBottom(navigationButtonsBox);
 
-        Button downloadCsv = new Button("Download CSV");
-        downloadCsv.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                try {
+        downloadCsv = new Button("Download CSV");
+        downloadCsv.setVisible(false);
+        downloadCsv.setOnAction(event -> {
+            try {
+                if (fileType.equals(FileType.CSV)) {
+                    csvExporter.writeCsvDataToNewCsv(csvData);
+                } else {
                     csvExporter.writeDataToCsv();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
         navigationButtonsBox.getChildren().add(backButton);
@@ -429,6 +433,9 @@ public class SearchApplicationGui extends Application {
         enterScreenRoot.setTop(anchorpane);
 
         primaryStage.setScene(initialScene);
+
+        searchScene = new Scene(searchScreen, 1000, 1000);
+        primaryStage.setResizable(true);
         primaryStage.show();
     }
 
@@ -446,7 +453,11 @@ public class SearchApplicationGui extends Application {
             try {
                 Indexer indexer = new Indexer(indexDirectoryPath);
                 //if filetype is not CSV then csvMessageId and csvMessage both will be null
-                indexer.createIndex(fileOrDirectory.getPath(), fileType, csvMessageId, csvMessage);
+                if (!fileType.equals(FileType.CSV)) {
+                    indexer.createIndex(fileOrDirectory.getPath(), fileType);
+                } else {
+                    csvData = indexer.createIndex(fileOrDirectory.getPath(), csvMessageId, csvMessage);
+                }
                 startSearchButton.setDisable(false);
             } catch (IOException e) {
 
@@ -455,7 +466,7 @@ public class SearchApplicationGui extends Application {
     }
 
     private void startSearch(Stage primaryStage, BorderPane searchScreen) {
-        primaryStage.setScene(new Scene(searchScreen, 1000, 1000));
+        primaryStage.setScene(searchScene);
         try {
             searcher = new Searcher(indexDirectoryPath);
         } catch (IOException e) {
@@ -483,7 +494,7 @@ public class SearchApplicationGui extends Application {
                 csvExporter = new CsvExporter(searchResults, textField.getText());
             }
             if (disSemanticsModelUploaded) {
-                NeighbourSuggestion neighbourSuggestion = searchResultWithSuggestions.getSearchTermSuggestions();
+                NeighbourSuggestion neighbourSuggestion = searchResultWithSuggestions.getSuggestionsWrapper();
                 List<String> suggestions = neighbourSuggestion.getNeighbourSuggestions();
                 if (suggestions != null && !suggestions.isEmpty()) {
                     VBox labelAndSuggestionsBox = new VBox();
@@ -569,6 +580,9 @@ public class SearchApplicationGui extends Application {
 
             //pagination
             createPagination(searchResultsPane, textField, searchResults, true);
+            if (exportResultsToCsv) {
+                downloadCsv.setVisible(true);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParseException e) {

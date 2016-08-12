@@ -14,13 +14,12 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import uk.ac.susx.tag.inputData.FileType;
-import uk.ac.susx.tag.inputData.csv.CsvData;
 import uk.ac.susx.tag.inputData.InputData;
 import uk.ac.susx.tag.inputData.TextInputData;
+import uk.ac.susx.tag.inputData.csv.CsvData;
 import uk.ac.susx.tag.inputData.csv.CsvReader;
 import uk.ac.susx.tag.inputData.pdf.PdfReader;
 import uk.ac.susx.tag.inputData.tsv.TsvReader;
-import uk.ac.susx.tag.method51.core.meta.Datum;
 import uk.ac.susx.tag.util.FileHelper;
 
 import java.io.File;
@@ -39,7 +38,7 @@ public class Indexer {
 
     private Analyzer analyzer = new EnglishAnalyzer(CharArraySet.EMPTY_SET);
 
-    //TODO pass in the analyzer
+
     public Indexer(String indexDirectoryPath, IndexWriterConfig.OpenMode openMode) throws IOException {
         //this directory will contain the indices
         indexDirectory =
@@ -106,12 +105,14 @@ public class Indexer {
         if (!indexMultipleFiles) close();
     }
 
+    /*
     public void createIndex(List<Datum> datumList, String idKey, String mainBodyKey) throws IOException {
         for (Datum datum : datumList) {
             indexData(FileHelper.getInputDataFromDatumObject(datum, idKey, mainBodyKey));
         }
         close();
     }
+    */
 
     //Must call this.close() after this method has been invoked for N times
     public void indexData(InputData inputData) throws IOException{
@@ -122,7 +123,7 @@ public class Indexer {
     }
 
     //TODO: add support for .doc/.docx files?
-    public void createIndex(String dataDirPath, FileType fileType, String idKey, String messageKey)
+    public void createIndex(String dataDirPath, FileType fileType)
             throws IOException{
         //get all files in the data directory
         List<File> files = Files.walk(Paths.get(dataDirPath))
@@ -139,8 +140,6 @@ public class Indexer {
                     indexData(FileHelper.getInputDataFromFile(file));
                 } else if (fileType.equals(FileType.PDF)) {
                     indexData(PdfReader.getPdfData(file));
-                } else if (fileType.equals(FileType.CSV)) {
-                    createIndex(CsvReader.getCsvData(file, idKey, messageKey), true);
                 } else if (fileType.equals(FileType.TSV)) {
                     List<InputData> data = TsvReader.getTsvData(file);
                     if (data != null) {
@@ -152,6 +151,21 @@ public class Indexer {
             }
         }
         close();
+    }
+
+    public CsvData createIndex(String dataDirPath, String idKey, String messageKey)
+            throws IOException{
+        //get all files in the data directory
+        List<File> files = Files.walk(Paths.get(dataDirPath))
+                .filter(Files::isRegularFile)
+                .map(Path::toFile)
+                .collect(Collectors.toList());
+
+        CsvData csvData = CsvReader.getCsvData(files, idKey, messageKey);
+        createIndex(csvData, true);
+
+        close();
+        return csvData;
     }
 
     private FieldType getFieldTypeStoringOffsets() {

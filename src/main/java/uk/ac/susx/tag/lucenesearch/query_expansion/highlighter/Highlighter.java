@@ -1,23 +1,20 @@
 package uk.ac.susx.tag.lucenesearch.query_expansion.highlighter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.highlight.*;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.postingshighlight.PostingsHighlighter;
-import org.apache.lucene.search.vectorhighlight.FastVectorHighlighter;
-import org.apache.lucene.search.vectorhighlight.FieldQuery;
 import uk.ac.susx.tag.inputData.FileType;
 import uk.ac.susx.tag.lucenesearch.result.SearchResult;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,7 +51,6 @@ public class Highlighter {
             List<String> relevantFragments = new ArrayList<>();
             for (int j = 0; j < docPassages.length; j++) {
                 if ((docPassages[j] != null)) {
-                    System.out.println("> Text fragment: " + (docPassages[j]));
                     relevantFragments.add(docPassages[j]);
                 }
             }

@@ -1,8 +1,8 @@
 package uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck;
 
 import uk.ac.susx.tag.util.Constants;
+import uk.ac.susx.tag.util.NamedEntityIdentifier;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,9 +10,11 @@ import java.util.List;
 public class KeyboardDistanceSpellCheck {
 
     private FrequencyBasedSpellChecker frequencyBasedSpellChecker;
+    private NamedEntityIdentifier namedEntityIdentifier;
 
     public KeyboardDistanceSpellCheck(FrequencyBasedSpellChecker frequencyBasedSpellChecker) {
         this.frequencyBasedSpellChecker = frequencyBasedSpellChecker;
+        namedEntityIdentifier = new NamedEntityIdentifier();
 
     }
 
@@ -20,7 +22,7 @@ public class KeyboardDistanceSpellCheck {
         String[] queryTerms = query.split(" ");
         List<String> suggestions = new ArrayList<>();
         for (String term: queryTerms) {
-            if (!Constants.termIsAConstant(term) && !Constants.termIsNamedEntity(term) && term.length() > 4) {
+            if ( term.length() > 4 && !Constants.termIsAConstant(term) && !namedEntityIdentifier.termIsNamedEntity(term)) {
                 suggestions.add(getBestSuggestion(term));
             } else {
                 suggestions.add("");

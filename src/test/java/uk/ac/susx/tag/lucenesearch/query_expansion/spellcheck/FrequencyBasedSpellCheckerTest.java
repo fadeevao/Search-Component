@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -9,15 +10,18 @@ import static org.junit.Assert.assertEquals;
 
 public class FrequencyBasedSpellCheckerTest {
 
+   private static FrequencyBasedSpellChecker frequencyBasedSpellChecker;
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        frequencyBasedSpellChecker = new FrequencyBasedSpellChecker();
+    }
+
     @Test
-    public void testSpellCheckOnASingleWordWhichIsNotPresentedInFrequencyMap() throws IOException {
-        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("spellcheck/dictionary.txt", "spellcheck/frequencies.csv");
+    public void testSpellCheckOnASingleWord() throws IOException {
         List<String> bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("erth");
         assertEquals(1, bestSuggestions.size());
         assertEquals("earth", bestSuggestions.get(0));
-
-        bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("fgdfd");
-        assertEquals(0, bestSuggestions.size());
 
         bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("wster");
         assertEquals(1, bestSuggestions.size());
@@ -46,7 +50,6 @@ public class FrequencyBasedSpellCheckerTest {
 
     @Test
     public void testSpellCheckOnMultipleWordQueryBothWordsNotInFrequencyMap() throws IOException {
-        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("spellcheck/dictionary.txt", "spellcheck/frequencies.csv");
         List<String> bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("mther erth");
         assertEquals(2, bestSuggestions.size());
         assertEquals("mother", bestSuggestions.get(0));
@@ -55,7 +58,6 @@ public class FrequencyBasedSpellCheckerTest {
 
     @Test
     public void testSpellCheckOnASingleWordWhichIsPresentInFrequencyMap() throws IOException {
-        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("spellcheck/dictionary.txt", "spellcheck/frequencies-test-spellcheck.csv");
         List<String> bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("come");
         assertEquals(1, bestSuggestions.size());
         assertEquals("come", bestSuggestions.get(0));
@@ -67,13 +69,10 @@ public class FrequencyBasedSpellCheckerTest {
 
     @Test
     public void testEdgeCases() throws IOException {
-        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("spellcheck/dictionary.txt", "spellcheck/frequencies.csv");
-        List<String> bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("fgdfd");
+        List<String> bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("");
         assertEquals(0, bestSuggestions.size());
 
-        bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery("");
+        bestSuggestions = frequencyBasedSpellChecker.getBestSuggestionForEveryWordInQuery(null);
         assertEquals(0, bestSuggestions.size());
-
-
     }
 }

@@ -1,16 +1,16 @@
 package uk.ac.susx.tag.lucenesearch.query_expansion;
 
-import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSuggestion;
-import uk.ac.susx.tag.lucenesearch.result.SearchResult;
-import uk.ac.susx.tag.lucenesearch.query_expansion.highlighter.HighlightedTextFragment;
-import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardKeyDistanceCalculator;
-import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardDistanceSpellCheck;
-import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.FrequencyBasedSpellChecker;
 import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSearcher;
+import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSuggestion;
+import uk.ac.susx.tag.lucenesearch.query_expansion.highlighter.HighlightedTextFragment;
+import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.FrequencyBasedSpellChecker;
+import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardDistanceSpellCheck;
+import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardKeyDistanceCalculator;
+import uk.ac.susx.tag.lucenesearch.result.SearchResult;
 import uk.ac.susx.tag.util.Constants;
+import uk.ac.susx.tag.util.NamedEntityIdentifier;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,12 +30,15 @@ public class QueryBuilder {
     private FrequencyBasedSpellChecker frequencyBasedSpellChecker;
     private KeyboardDistanceSpellCheck keyboardDistanceSpellCheck;
     private KeyboardKeyDistanceCalculator calculator;
+    private NamedEntityIdentifier namedEntityIdentifier;
+
     private NeighbourSearcher neighbourSearcher;
 
     public QueryBuilder() throws IOException {
         frequencyBasedSpellChecker = new FrequencyBasedSpellChecker();
         keyboardDistanceSpellCheck = new KeyboardDistanceSpellCheck(frequencyBasedSpellChecker);
         calculator = new KeyboardKeyDistanceCalculator();
+        namedEntityIdentifier = new NamedEntityIdentifier();
     }
 
     public QueryBuilder(NeighbourSearcher neighbourSearcher) throws IOException {
@@ -63,7 +66,7 @@ public class QueryBuilder {
     Original term is left as it is if it's a constant (eg a pronoun), a name or is less than 5 chars in length
      */
     public String expandSingleTermQuery(String query) {
-        if (Constants.termIsAConstant(query) || Constants.termIsNamedEntity(query) || query.length() <= 4) {
+        if ( query.length() <= 4 || Constants.termIsAConstant(query) || namedEntityIdentifier.termIsNamedEntity(query)) {
             return query;
         }
         StringBuilder stringBuilder = new StringBuilder(query);
@@ -137,5 +140,9 @@ public class QueryBuilder {
 
     public NeighbourSearcher getNeighbourSearcher() {
         return neighbourSearcher;
+    }
+
+    public void setNeighbourSearcher(NeighbourSearcher neighbourSearcher) {
+        this.neighbourSearcher = neighbourSearcher;
     }
 }

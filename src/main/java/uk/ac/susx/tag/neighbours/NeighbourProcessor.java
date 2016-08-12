@@ -18,14 +18,13 @@ public class NeighbourProcessor {
         neighbourMap = new HashMap<String, List<Neighbour>>();
     }
 
-    //TODO: how to deal with exceptions?
-    public void buildNeighbourMap(String pathToFile) throws IOException, InvalidFileFormatException {
-       buildNeighbourMap(new File(pathToFile));
+    public Map<String, List<Neighbour>> buildNeighbourMap(String pathToFile) throws IOException, InvalidFileFormatException {
+       return buildNeighbourMap(new File(pathToFile));
     }
 
-    public void buildNeighbourMap(String pathToFile, int neighbourCount)  {
+    public Map<String, List<Neighbour>> buildNeighbourMap(String pathToFile, int neighbourCount)  {
         this.neighbourCount = neighbourCount;
-        buildNeighbourMap(new File(pathToFile));
+        return  buildNeighbourMap(new File(pathToFile));
     }
 
     public Map<String, List<Neighbour>> buildNeighbourMap(File file, int neighbourCount) {

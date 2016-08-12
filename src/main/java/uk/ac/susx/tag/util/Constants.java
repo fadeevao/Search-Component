@@ -1,19 +1,11 @@
 package uk.ac.susx.tag.util;
 
 
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.Span;
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
 public class Constants {
+
     public final static List<String> STOPWORDS = Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8",
             "9", "000", "$", "£",
             "about", "after", "all", "also", "an", "and",
@@ -49,24 +41,5 @@ public class Constants {
 
     public static boolean termIsAConstant(String term) {
         return STOPWORDS.contains(term) || POSESSIVE_PRONOUNS.contains(term) || PUNCTUATION.contains(term) || PRONOUNS.contains(term);
-    }
-
-    public static boolean termIsNamedEntity(String term) {
-        InputStream modelIn;
-        Span nameSpans[];
-        TokenNameFinderModel model = null;
-        String termCapitalized = org.apache.commons.lang3.StringUtils.capitalize(term);
-        try {
-
-            File file = FileUtils.toFile(Thread.currentThread().getContextClassLoader().getResource("named-entity/en-ner-person.bin"));
-            modelIn = new FileInputStream(file);
-            model = new TokenNameFinderModel(modelIn);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        NameFinderME nameFinder = new NameFinderME(model);
-        String sentence[] = new String[]{termCapitalized};
-        nameSpans = nameFinder.find(sentence);
-        return nameSpans.length > 0;
     }
 }

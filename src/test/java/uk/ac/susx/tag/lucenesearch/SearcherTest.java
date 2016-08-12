@@ -1,7 +1,6 @@
 package uk.ac.susx.tag.lucenesearch;
 
 
-import org.apache.commons.io.FileUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.store.Directory;
@@ -11,18 +10,18 @@ import org.mockito.Mockito;
 import uk.ac.susx.tag.inputData.FileType;
 import uk.ac.susx.tag.inputData.InputData;
 import uk.ac.susx.tag.lucenesearch.exception.IndexingException;
+import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSearcher;
 import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSuggestion;
 import uk.ac.susx.tag.lucenesearch.query_expansion.QueryBuilder;
 import uk.ac.susx.tag.lucenesearch.result.SearchResult;
 import uk.ac.susx.tag.lucenesearch.result.SearchResultWithSuggestions;
-import uk.ac.susx.tag.neighbours.Neighbour;
-import uk.ac.susx.tag.neighbours.NeighbourProcessor;
-import uk.ac.susx.tag.lucenesearch.neighbours.NeighbourSearcher;
 import uk.ac.susx.tag.neighbours.exception.InvalidFileFormatException;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -33,12 +32,7 @@ public class SearcherTest {
 
     @Test
     public void testTermSearchForPhrase() throws IOException, ParseException, InvalidTokenOffsetsException, IndexingException {
-        Directory ramDirectory = new RAMDirectory();
-        Indexer indexer = new Indexer(ramDirectory);
-        indexer.createIndex("src/test/resources/lucenedata/samplefiles", FileType.TEXT_FILE, null, null);
-        Searcher searcher = new Searcher(ramDirectory);
-        QueryBuilder queryBuilder = new QueryBuilder();
-        searcher.setQueryBuilder(queryBuilder);
+        Searcher searcher = initialiseSearcherWithSampleTexts();
         List<SearchResult> topHits = searcher.searchFor("\"hit a deer\"").getSearchResults();
         assertEquals(1, topHits.size());
 
@@ -55,15 +49,20 @@ public class SearcherTest {
         assertEquals(1, topHits.size());
     }
 
-
-    @Test
-    public void testStopWords() throws IOException, InvalidTokenOffsetsException, ParseException, IndexingException {
+    private Searcher initialiseSearcherWithSampleTexts() throws IOException {
         Directory ramDirectory = new RAMDirectory();
         Indexer indexer = new Indexer(ramDirectory);
-        indexer.createIndex("src/test/resources/lucenedata/samplefiles", FileType.TEXT_FILE, null, null);
+        indexer.createIndex("src/test/resources/lucenedata/samplefiles", FileType.TEXT_FILE);
         Searcher searcher = new Searcher(ramDirectory);
         QueryBuilder queryBuilder = new QueryBuilder();
         searcher.setQueryBuilder(queryBuilder);
+        return searcher;
+    }
+
+
+    @Test
+    public void testStopWords() throws IOException, InvalidTokenOffsetsException, ParseException, IndexingException {
+        Searcher searcher = initialiseSearcherWithSampleTexts();
         List<SearchResult> topHits = searcher.searchFor("and").getSearchResults();
         assertEquals(4, topHits.size());
     }
@@ -96,7 +95,7 @@ public class SearcherTest {
         SearchResultWithSuggestions searchResultWithSuggestions = searcher.searchFor("soldier");
         List<SearchResult> initialResults = searchResultWithSuggestions.getSearchResults();
         assertEquals(2, initialResults.size()); //more results here as we make the term fuzzy TODO???
-        List<String> suggestions = searchResultWithSuggestions.getSearchTermSuggestions().getNeighbourSuggestions();
+        List<String> suggestions = searchResultWithSuggestions.getSuggestionsWrapper().getNeighbourSuggestions();
         List<String> userSelection = new ArrayList<>(Arrays.asList(suggestions.get(0)));
 
         SearchResultWithSuggestions finalResults = searcher.expandSearchResultsWithUserSelectedTerms(searchResultWithSuggestions.getSearchResults(),userSelection);
@@ -119,7 +118,7 @@ public class SearcherTest {
 
         List<SearchResult> initialResults = searchResultWithSuggestions.getSearchResults();
         assertEquals(3, initialResults.size());
-        List<String> suggestions = searchResultWithSuggestions.getSearchTermSuggestions().getNeighbourSuggestions();
+        List<String> suggestions = searchResultWithSuggestions.getSuggestionsWrapper().getNeighbourSuggestions();
         List<String> userSelection = new ArrayList<>();
         userSelection.add(suggestions.get(0));
         userSelection.add(suggestions.get(1));
@@ -130,16 +129,14 @@ public class SearcherTest {
         assertEquals("6", finalResults.getSearchResultsAfterExpansion().get(1).getFileId());
     }
 
-    //@Test
-    public void test() throws IOException, InvalidTokenOffsetsException, ParseException, InvalidFileFormatException, IndexingException {
+    @Test
+    public void testNoResultsReturnedWhenUserSelectsAdditionalTerms() throws IOException, InvalidTokenOffsetsException, ParseException, InvalidFileFormatException, IndexingException {
         Directory ramDirectory = new RAMDirectory();
         generateData(ramDirectory);
         Searcher searcher = new Searcher(ramDirectory);
 
-        NeighbourProcessor neighbourProcessor = new NeighbourProcessor();
-        File file = FileUtils.toFile(Thread.currentThread().getContextClassLoader().getResource("neighbours/tweets.neighbours"));
-        Map<String, List<Neighbour>> neighbourMap = neighbourProcessor.buildNeighbourMap(file);
-        NeighbourSearcher neighbourSearcher = new NeighbourSearcher(neighbourMap);
+        NeighbourSearcher neighbourSearcher = Mockito.mock(NeighbourSearcher.class);
+        when(neighbourSearcher.generateQueryTermsBasedOnTheNeighboursOfHighlightedWords(any(), any())).thenReturn(new NeighbourSuggestion(Arrays.asList("summer", "time"), Collections.EMPTY_SET));
         QueryBuilder queryBuilder = new QueryBuilder(neighbourSearcher);
         searcher.setQueryBuilder(queryBuilder);
 
@@ -147,7 +144,7 @@ public class SearcherTest {
 
         List<SearchResult> initialResults = searchResultWithSuggestions.getSearchResults();
         assertEquals(3, initialResults.size());
-        List<String> suggestions = searchResultWithSuggestions.getSearchTermSuggestions().getNeighbourSuggestions();
+        List<String> suggestions = searchResultWithSuggestions.getSuggestionsWrapper().getNeighbourSuggestions();
         List<String> userSelection = new ArrayList<>();
         userSelection.add(suggestions.get(0));
         userSelection.add(suggestions.get(1));

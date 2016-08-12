@@ -2,7 +2,6 @@ package uk.ac.susx.tag.lucenesearch;
 
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -14,24 +13,15 @@ import org.junit.rules.ExpectedException;
 import uk.ac.susx.tag.inputData.FileType;
 import uk.ac.susx.tag.inputData.csv.CsvData;
 import uk.ac.susx.tag.inputData.csv.CsvReader;
-import uk.ac.susx.tag.lucenesearch.query_expansion.highlighter.HighlightedTextFragment;
-import uk.ac.susx.tag.method51.core.meta.Datum;
-import uk.ac.susx.tag.method51.core.meta.Key;
-import uk.ac.susx.tag.method51.core.meta.types.RuntimeType;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class IndexerTest {
     @Rule
@@ -62,7 +52,7 @@ public class IndexerTest {
     public void testIndexingPdfFilesInDirectory() throws IOException {
         Directory ramDirectory = new RAMDirectory();
         Indexer indexer = new Indexer(ramDirectory);
-        indexer.createIndex("src/test/resources/pdf", FileType.PDF, null, null);
+        indexer.createIndex("src/test/resources/pdf", FileType.PDF);
         IndexReader reader = DirectoryReader.open(indexer.getIndexDirectory());
         assertEquals(2, reader. numDocs());
     }
@@ -71,20 +61,28 @@ public class IndexerTest {
     public void testIndexingTextFilesInDirectory() throws IOException {
         Directory ramDirectory = new RAMDirectory();
         Indexer indexer = new Indexer(ramDirectory);
-        indexer.createIndex("src/test/resources/lucenedata/samplefiles", FileType.TEXT_FILE, null, null);
+        indexer.createIndex("src/test/resources/lucenedata/samplefiles", FileType.TEXT_FILE);
         IndexReader reader = DirectoryReader.open(indexer.getIndexDirectory());
         assertEquals(4, reader. numDocs());
+        assertEquals(4, reader.getDocCount("path"));
+        assertEquals(4, reader.getDocCount("id"));
+        assertEquals(4, reader.getDocCount("contents"));
+
 
         assertNotNull(reader.document(0).get("path"));
-        assertEquals("3student.txt", reader.document(0).get("id"));
-        assertEquals("4moons.txt", reader.document(1).get("id"));
-        assertEquals("deer.txt", reader.document(2).get("id"));
-        assertEquals("goldfish.txt", reader.document(3).get("id"));
+        List<String> docs = new ArrayList<>();
+        for (int i = 0; i <reader.numDocs(); i++) {
+            docs.add(reader.document(i).get("id"));
+        }
 
+        assertTrue(docs.contains("3student.txt"));
+        assertTrue(docs.contains("4moons.txt"));
+        assertTrue(docs.contains("deer.txt"));
+        assertTrue(docs.contains("goldfish.txt"));
         exception.expect(IllegalArgumentException.class);
         reader.document(4).get("id");
     }
-
+/*
     @Test
     public void testIndexingDatumObjects() throws IOException {
         Key<String> mainBody = Key.of("body", RuntimeType.STRING);
@@ -107,6 +105,7 @@ public class IndexerTest {
         assertEquals("one", reader.document(0).get("id"));
         assertEquals("two", reader.document(1).get("id"));
     }
+    */
 
     private CsvData getFacebookCsvData() throws IOException {
         File file = FileUtils.toFile(Thread.currentThread().getContextClassLoader().getResource("csv/facebook.csv"));

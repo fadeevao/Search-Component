@@ -39,7 +39,7 @@ public class SearchResultWithSuggestions {
         this.searchResults = searchResults;
     }
 
-    public NeighbourSuggestion getSearchTermSuggestions() {
+    public NeighbourSuggestion getSuggestionsWrapper() {
         return searchTermSuggestions;
     }
 

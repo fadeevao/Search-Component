@@ -1,24 +1,10 @@
 package uk.ac.susx.tag;
 
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
-import org.junit.Test;
-import uk.ac.susx.tag.lucenesearch.exception.IndexingException;
-import uk.ac.susx.tag.method51.core.meta.Datum;
-import uk.ac.susx.tag.method51.core.meta.Key;
-import uk.ac.susx.tag.method51.core.meta.types.RuntimeType;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-
 /*
 Test class to demonstrate how SearchComponent can be used within Method52 application
  */
+/*
 public class SearchApplicationMethod52Test {
 
     private final static String ID_KEY = "id";
@@ -66,3 +52,4 @@ public class SearchApplicationMethod52Test {
        return new ArrayList<>(Arrays.asList(datumOne, datumTwo));
     }
 }
+*/

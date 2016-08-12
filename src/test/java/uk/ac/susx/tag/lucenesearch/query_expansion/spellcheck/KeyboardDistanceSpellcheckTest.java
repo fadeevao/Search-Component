@@ -25,7 +25,7 @@ public class KeyboardDistanceSpellcheckTest {
 
     @Test
     public void testNullIsReturned() throws IOException {
-        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("spellcheck/dictionary.txt", "spellcheck/frequencies.csv");
+        FrequencyBasedSpellChecker frequencyBasedSpellChecker = new FrequencyBasedSpellChecker("/spellcheck/dictionary.txt", "/spellcheck/frequencies.csv");
         KeyboardDistanceSpellCheck keyboardDistanceSpellCheck = new KeyboardDistanceSpellCheck(frequencyBasedSpellChecker);
         assertNull(keyboardDistanceSpellCheck.getBestSuggestion("5iramisu"));
         assertNull(keyboardDistanceSpellCheck.getBestSuggestion("gjhsfhj"));
