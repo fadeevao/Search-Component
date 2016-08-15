@@ -9,8 +9,8 @@ import org.apache.lucene.search.spans.SpanWeight;
 
 public class CustomPostingsHighlighter extends PostingsHighlighter {
 
-    public CustomPostingsHighlighter(int length) {
-        super(length);
+    public CustomPostingsHighlighter() {
+        super(DEFAULT_MAX_LENGTH);
     }
 
     @Override

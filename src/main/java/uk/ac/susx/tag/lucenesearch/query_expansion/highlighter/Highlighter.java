@@ -33,7 +33,7 @@ public class Highlighter {
 
     public List<SearchResult> highlight(Query query, TopDocs hits, FileType fileType) throws IOException, InvalidTokenOffsetsException {
         List<SearchResult> searchResults = new ArrayList<>();
-        PostingsHighlighter highlighter = new PostingsHighlighter(250);
+        PostingsHighlighter highlighter = new CustomPostingsHighlighter();
         int indexLength = hits.scoreDocs.length > 1000 ? 1000 : hits.scoreDocs.length;
         String[] fragments;
         if (indexLength < hits.scoreDocs.length) {

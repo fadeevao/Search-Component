@@ -620,7 +620,7 @@ public class SearchApplicationGui extends Application {
 
             pagination.setPageFactory((Integer pageIndex) -> createPage(pageIndex, searchResults));
             pagination.setPadding(DEFAULT_PADDING);
-            pagination.setCache(true);;
+            pagination.setCache(true);
             searchResultsPane.getChildren().addAll(resultsFoundLabel, pagination);
         }
     }
