@@ -35,8 +35,8 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
-                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -50,12 +50,12 @@
             </resource>
         </resources>
     </build>
-    <!--<parent>-->
-        <!--<groupId>uk.ac.susx.tag</groupId>-->
-        <!--<artifactId>tag-dist</artifactId>-->
-        <!--<version>1.0.3</version>-->
-        <!--<relativePath>../tag-dist/pom.xml</relativePath>-->
-    <!--</parent>-->
+    <parent>
+        <groupId>uk.ac.susx.tag</groupId>
+        <artifactId>tag-dist</artifactId>
+        <version>1.0.3</version>
+        <relativePath>../tag-dist/pom.xml</relativePath>
+    </parent>
 
     <dependencies>
         <dependency>
@@ -104,11 +104,11 @@
             <version>1.6.0</version>
         </dependency>
 
-        <!--<dependency>-->
-        <!--<groupId>uk.ac.susx.tag</groupId>-->
-        <!--<artifactId>method51.core.datum</artifactId>-->
-        <!--<version>0.3.10</version>-->
-        <!--</dependency>-->
+        <dependency>
+        <groupId>uk.ac.susx.tag</groupId>
+        <artifactId>method51.core.datum</artifactId>
+        <version>0.3.10</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>

@@ -4,14 +4,29 @@ package uk.ac.susx.tag;
 /*
 Test class to demonstrate how SearchComponent can be used within Method52 application
  */
-/*
+
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.junit.Test;
+import uk.ac.susx.tag.lucenesearch.exception.IndexingException;
+import uk.ac.susx.tag.method51.core.meta.Datum;
+import uk.ac.susx.tag.method51.core.meta.Key;
+import uk.ac.susx.tag.method51.core.meta.types.RuntimeType;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
 public class SearchApplicationMethod52Test {
 
     private final static String ID_KEY = "id";
     private final static String MAIN_BODY_KEY = "body";
 
     @Test
-    public void testSearchComponentIntegrationWithoutNeighboursFilePresent() throws ParseException, InvalidTokenOffsetsException, IOException, IndexingException {
+    public void testSearchComponentIntegrationWithoutNeighboursFilePresent() throws ParseException, InvalidTokenOffsetsException, IOException, IndexingException, org.apache.lucene.queryparser.classic.ParseException {
         SearchApplicationMethod52 searchApplicationMethod52 = new SearchApplicationMethod52();
         String indexDirectoryPath = "src/test/resources/testing-index-directory";
 
@@ -25,7 +40,7 @@ public class SearchApplicationMethod52Test {
     }
 
     @Test
-    public void testSearchComponentIntegrationWithNeighboursFilePresent() throws ParseException, InvalidTokenOffsetsException, IOException, IndexingException {
+    public void testSearchComponentIntegrationWithNeighboursFilePresent() throws ParseException, InvalidTokenOffsetsException, IOException, IndexingException, org.apache.lucene.queryparser.classic.ParseException {
         SearchApplicationMethod52 searchApplicationMethod52 = new SearchApplicationMethod52();
         String indexDirectoryPath = "src/test/resources/testing-index-directory";
         String neighbourFilePath = "src/test/resources/neighbours/wiki-test";
@@ -52,4 +67,3 @@ public class SearchApplicationMethod52Test {
        return new ArrayList<>(Arrays.asList(datumOne, datumTwo));
     }
 }
-*/

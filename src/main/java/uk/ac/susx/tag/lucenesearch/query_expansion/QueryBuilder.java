@@ -6,9 +6,11 @@ import uk.ac.susx.tag.lucenesearch.query_expansion.highlighter.HighlightedTextFr
 import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.FrequencyBasedSpellChecker;
 import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardDistanceSpellCheck;
 import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.KeyboardKeyDistanceCalculator;
+import uk.ac.susx.tag.lucenesearch.query_expansion.spellcheck.chatspeak.ChatspeakSuggest;
 import uk.ac.susx.tag.lucenesearch.result.SearchResult;
 import uk.ac.susx.tag.util.Constants;
 import uk.ac.susx.tag.util.NamedEntityIdentifier;
+import uk.ac.susx.tag.util.Stemmer;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -34,11 +36,14 @@ public class QueryBuilder {
 
     private NeighbourSearcher neighbourSearcher;
 
+    private ChatspeakSuggest chatspeakSuggest;
+
     public QueryBuilder() throws IOException {
         frequencyBasedSpellChecker = new FrequencyBasedSpellChecker();
         keyboardDistanceSpellCheck = new KeyboardDistanceSpellCheck(frequencyBasedSpellChecker);
         calculator = new KeyboardKeyDistanceCalculator();
         namedEntityIdentifier = new NamedEntityIdentifier();
+        chatspeakSuggest = new ChatspeakSuggest();
     }
 
     public QueryBuilder(NeighbourSearcher neighbourSearcher) throws IOException {
@@ -57,6 +62,7 @@ public class QueryBuilder {
         StringBuilder stringBuilder = new StringBuilder(query).append(" ");
         appendToQueryString(queryTerms, spellcheckerSuggestions, stringBuilder);
         appendToQueryString(queryTerms, keyboardSuggestions, stringBuilder);
+        appendChatspeakSuggestions(query, stringBuilder);
         return stringBuilder.toString();
 
     }
@@ -95,11 +101,27 @@ public class QueryBuilder {
 
        if (!keyboardSuggestions.isEmpty() && keyboardSuggestions.get(0) != null) {
            stringBuilder.append(keyboardSuggestions.get(0))
-                   .append("^2"); //boost the correctly spelled word
+                   .append("^2 "); //boost the correctly spelled word
        }
+
+        appendChatspeakSuggestions(query, stringBuilder);
 
        return  stringBuilder.toString();
    }
+
+    /*
+    Appends chatspeak suggestions if there are any to the original query
+     */
+    private void appendChatspeakSuggestions(String query, StringBuilder stringBuilder) {
+        List<String> chatSpeakSuggestions = chatspeakSuggest.getChatspeakSuggestions(query);
+        if (chatSpeakSuggestions!=null) {
+            for (String sugg : chatSpeakSuggestions) {
+                stringBuilder.append(sugg)
+                        .append(" ");
+            }
+        }
+    }
+
 
     private void appendToQueryString(String[] queryTerms, List<String> suggestions, StringBuilder stringBuilder) {
         for (String suggestion : suggestions) {
@@ -115,7 +137,7 @@ public class QueryBuilder {
     }
 
     /*
-    Get the highlighted terms from the results and pass them on to the neighbourSearcher that will gind neighbours for the highlighted terms
+    Get the highlighted terms from the results and pass them on to the neighbourSearcher that will find neighbours for the highlighted terms
     and spelling variations
      */
     public NeighbourSuggestion expandSearchBasedOnWhatWasMostRelevant(List<SearchResult> searchResults, String originalQuery) {

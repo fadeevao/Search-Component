@@ -4,6 +4,7 @@ package uk.ac.susx.tag.neighbours;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import uk.ac.susx.tag.neighbours.exception.InvalidFileFormatException;
+import uk.ac.susx.tag.util.Stemmer;
 
 import java.io.*;
 import java.util.*;
@@ -41,7 +42,7 @@ public class NeighbourProcessor {
             e.printStackTrace();
         }
 
-        //TODO: needs more work. current implementation fails valid twitter file
+        //TODO: needs more work. current implementation fails valid twitter file && takes forever for big files..
         /*
         if (!FileFormatValidator.isFileInAValidFormat(fileContents) ) {
             throw new InvalidFileFormatException("Supplied file cannot be parsed due to invalid format. File name: " + file.getName());
