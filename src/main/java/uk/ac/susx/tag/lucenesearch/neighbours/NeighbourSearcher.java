@@ -15,18 +15,31 @@ public class NeighbourSearcher {
     private int numberOfSuggestions;
     private boolean separateSpellingVariations;
     private ChatspeakSuggest chatspeakSuggest;
+    private int numberOfSpellingVariationsToSuggest;
+    private int editDistance;
 
     private final static Integer DEFAULT_NUMBER_OF_NEIGHBOURS = 3;
+    private final static Integer DEFAULT_NUMBER_OF_SPELLING_SUGGESTIONS = 5;
+    private final static Integer DEFAULT_EDIT_DISTANCE = 3;
 
     public NeighbourSearcher(Map<String, List<Neighbour>> map, int numberOfSuggestions) {
-        this(map, numberOfSuggestions, false);
+        this(map, numberOfSuggestions, false, DEFAULT_NUMBER_OF_SPELLING_SUGGESTIONS, DEFAULT_EDIT_DISTANCE);
     }
 
     /*
     Default number of suggestions for every term that we generate is 3
      */
     public NeighbourSearcher(Map<String, List<Neighbour>> map) {
-        this(map, DEFAULT_NUMBER_OF_NEIGHBOURS, false);
+        this(map, DEFAULT_NUMBER_OF_NEIGHBOURS, false, DEFAULT_NUMBER_OF_SPELLING_SUGGESTIONS, DEFAULT_EDIT_DISTANCE);
+    }
+
+    public NeighbourSearcher(Map<String, List<Neighbour>> map, int numberOfSuggestions, boolean separateSpellingVariations, int numberOfSpellingVariationsToSuggest, int editDistance) {
+        this.neighbourMap = map;
+        this.numberOfSuggestions = numberOfSuggestions;
+        this.separateSpellingVariations = separateSpellingVariations;
+        chatspeakSuggest = new ChatspeakSuggest();
+        this.numberOfSpellingVariationsToSuggest = numberOfSpellingVariationsToSuggest;
+        this.editDistance = editDistance;
     }
 
     public NeighbourSearcher(Map<String, List<Neighbour>> map, int numberOfSuggestions, boolean separateSpellingVariations) {
@@ -34,6 +47,8 @@ public class NeighbourSearcher {
         this.numberOfSuggestions = numberOfSuggestions;
         this.separateSpellingVariations = separateSpellingVariations;
         chatspeakSuggest = new ChatspeakSuggest();
+        this.numberOfSpellingVariationsToSuggest = DEFAULT_NUMBER_OF_SPELLING_SUGGESTIONS;
+        this.editDistance = DEFAULT_EDIT_DISTANCE;
     }
 
     /*
@@ -79,7 +94,7 @@ public class NeighbourSearcher {
         boolean termAdded = false;
         for (Neighbour neighbour : neighbours) {
             if (separateSpellingVariations) {
-                if (StringUtils.getLevenshteinDistance(originalTerm, neighbour.getTerm()) <= 3) {
+                if (spellingVariations.size() < numberOfSpellingVariationsToSuggest && StringUtils.getLevenshteinDistance(originalTerm, neighbour.getTerm()) <= editDistance) {
                     spellingVariations.add(neighbour.getTerm());
                     termAdded = true;
                 }

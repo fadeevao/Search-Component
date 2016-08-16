@@ -17,8 +17,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
@@ -53,21 +51,19 @@ public class SearchApplicationGui extends Application {
     private Searcher searcher;
     private FileType fileType;
     private final Insets DEFAULT_PADDING = new Insets(10, 20, 10, 20);
-    private String csvMessage;
-    private String csvMessageId;
+    private String csvMessage, csvMessageId, indexDirectoryPath;
+
     private QueryBuilder queryBuilder;
-    private String indexDirectoryPath;
-    private int numberOfNeighboursToSuggest;
-    private boolean separateSpellingSuggestions = true;
-    private boolean disSemanticsModelUploaded = false;
+    private int numberOfNeighboursToSuggest, numberOfSpellingVariationsToSuggest, editDistance;
+    private boolean separateSpellingSuggestions, disSemanticsModelUploaded = false;
+
     private Pagination pagination;
-    private Label noResultsFoundLabel;
-    private Label resultsFoundLabel;
+
+    private Label noResultsFoundLabel, resultsFoundLabel;
     private ChoiceBox fileTypeChoiceBox;
-    private Button openDirectoryButton;
-    private Label directoryMustBeEmptyLabel;
+    private Button openDirectoryButton, downloadCsv;
     private boolean exportResultsToCsv;
-    private Button downloadCsv;
+
 
     private CsvExporter csvExporter;
     private CsvData csvData;
@@ -80,65 +76,24 @@ public class SearchApplicationGui extends Application {
     @Override
     public void start(final Stage primaryStage) throws Exception {
 
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-
-            @Override
-            public void uncaughtException(Thread thread, Throwable t) {
-                System.out.println("Exception thrown "  + t.getMessage());
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Exception Dialog");
-                alert.setHeaderText("Unexpected exception occurred");
-
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                t.printStackTrace(pw);
-                String exceptionText = sw.toString();
-
-                Label label = new Label("The exception stacktrace was:");
-
-                Label textArea = new Label(exceptionText);
-
-                GridPane.setVgrow(textArea, Priority.ALWAYS);
-                GridPane.setHgrow(textArea, Priority.ALWAYS);
-
-                GridPane expContent = new GridPane();
-                expContent.setMaxWidth(Double.MAX_VALUE);
-                expContent.add(label, 0, 0);
-                expContent.add(textArea, 0, 1);
-                alert.getDialogPane().setExpandableContent(expContent);
-                alert.showAndWait();
-            }
-
+        Thread.setDefaultUncaughtExceptionHandler((thread, t) -> {
+            showExceptionDialog(t);
         });
+
         primaryStage.setTitle("Search Application");
         queryBuilder = new QueryBuilder();
 
 
-        GridPane inputAdminGrid = new GridPane();
-        inputAdminGrid.setVgap(5);
-        inputAdminGrid.setHgap(10);
-        inputAdminGrid.setPadding(DEFAULT_PADDING);
-
-        directoryMustBeEmptyLabel = new Label("directory must be empty!");
-        directoryMustBeEmptyLabel.setFont(Font.font(9));
-        directoryMustBeEmptyLabel.setTextFill(Color.RED);
+        GridPane inputAdminGrid = configureAdminInpoutGrid();
 
         final DirectoryChooser directoryChooser = new DirectoryChooser();
-        Label indexDirectoryLabel = new Label("1. Select a directory for indexing the files");
+        Label indexDirectoryLabel = new Label("1. Select a directory where file index will be stored");
         Button indexDirectoryButton = new Button("Select index directory");
-        indexDirectoryButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                File directory = directoryChooser.showDialog(primaryStage);
-                if (directory != null) {
-//                    if (directory.list().length >= 1) {
-//                        inputAdminGrid.add(directoryMustBeEmptyLabel, 1, 0);
-//                    } else {
-                        indexDirectoryPath = directory.getPath();
-                        inputAdminGrid.getChildren().remove(directoryMustBeEmptyLabel);
-                        fileTypeChoiceBox.setDisable(false);
-                    //}
-                }
+        indexDirectoryButton.setOnAction(event -> {
+            File directory = directoryChooser.showDialog(primaryStage);
+            if (directory != null) {
+                    indexDirectoryPath = directory.getPath();
+                    fileTypeChoiceBox.setDisable(false);
             }
         });
 
@@ -147,34 +102,18 @@ public class SearchApplicationGui extends Application {
         final TextField csvMessageTextField = new TextField();
         Label csvMessageIdLabel = new Label("CSV message id");
         Label csvMessageLabel = new Label("CSV message field");
-        GridPane grid = new GridPane();
-        grid.setPadding(DEFAULT_PADDING);
-        grid.setHgap(10);
-        grid.setVgap(5);
-        grid.add(csvMessageIdLabel, 1, 1);
-        grid.add(csvMessageIdTextField, 2, 1);
-
-        grid.add(csvMessageLabel, 1, 2);
-        grid.add(csvMessageTextField, 2, 2);
-        Button doneEnteringFieldValues = new Button("Done");
-        grid.add(doneEnteringFieldValues, 2, 3);
-
-        grid.setVisible(false);
+        GridPane grid = configurePaneForCsvParameters();
+        Button doneEnteringFieldValues = addCsvParametersToTheGridAndReturnButtonForSaving(csvMessageIdTextField, csvMessageTextField, csvMessageIdLabel, csvMessageLabel, grid);
 
         inputAdminGrid.add(indexDirectoryLabel, 0, 0);
         inputAdminGrid.add(indexDirectoryButton, 2, 0);
-        ColumnConstraints columnConstraints = new ColumnConstraints();
-        columnConstraints.setPercentWidth(60);
-        inputAdminGrid.getColumnConstraints().add(0, columnConstraints);
-
-        inputAdminGrid.setPadding(DEFAULT_PADDING);
 
         Button startSearchButton = new Button("Start searching");
         startSearchButton.setDisable(true);
         openDirectoryButton = new Button("Select");
         openDirectoryButton.setDisable(true);
 
-        Label fileTypeSelectionLabel = new Label("2. select the file type");
+        Label fileTypeSelectionLabel = new Label("2. Select the extension of files you want to search");
         List<String> choiceList = new ArrayList<>();
         choiceList.add("choose file type");
         for (FileType fileType : FileType.values()) {
@@ -183,7 +122,6 @@ public class SearchApplicationGui extends Application {
         fileTypeChoiceBox = new ChoiceBox(FXCollections.observableArrayList(choiceList));
         fileTypeChoiceBox.setDisable(true);
         fileTypeChoiceBox.getSelectionModel().selectFirst();
-        fileTypeChoiceBox.setTooltip(new Tooltip("Select the file type"));
 
         fileTypeChoiceBox.setOnAction(event -> {
             if (!fileTypeChoiceBox.getValue().equals("choose file type")) {
@@ -210,44 +148,9 @@ public class SearchApplicationGui extends Application {
             openDirectoryButton.setDisable(false);
         });
 
-        Label singleFileOrDirectoryLabel = new Label("3. My searchable items are represented in a:");
-        HBox radioButtonBoxFileOrDirectory = new HBox();
-        radioButtonBoxFileOrDirectory.setSpacing(5);
-        ToggleGroup groupFileOrDirectory = new ToggleGroup();
+        generateInputOptionsForUploadingSearchFiles(primaryStage, inputAdminGrid, startSearchButton);
 
-
-        final RadioButton[] singleFile = {new RadioButton("single file")};
-        singleFile[0].setToggleGroup(groupFileOrDirectory);
-
-        RadioButton directory = new RadioButton("directory");
-        directory.setToggleGroup(groupFileOrDirectory);
-        directory.setSelected(true);
-        radioButtonBoxFileOrDirectory.getChildren().addAll(singleFile[0], directory);
-        inputAdminGrid.add(singleFileOrDirectoryLabel, 0, 3);
-        inputAdminGrid.add(radioButtonBoxFileOrDirectory, 2, 3);
-
-
-        final boolean[] singleFileSelection = new boolean[1];
-        singleFileSelection[0] = false;
-        groupFileOrDirectory.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-            @Override
-            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
-                RadioButton chk = (RadioButton) newValue.getToggleGroup().getSelectedToggle(); // Cast object to radio button
-                if (chk.getText().toString().equals("single file")) {
-                    singleFileSelection[0] = true;
-                } else {
-                    singleFileSelection[0] = false;
-                }
-            }
-        });
-
-
-        Label directorySelectLabel = new Label("4. select directory with searchable files or a single file");
-        openDirectoryButton.setOnAction(event -> selectDirectoryToIndex(singleFileSelection, primaryStage, startSearchButton));
-        inputAdminGrid.add(directorySelectLabel, 0, 4);
-        inputAdminGrid.add(openDirectoryButton, 2, 4);
-
-        Label disSemanticsLabel = new Label("5. Use distributional semantics model to improve search results");
+        Label disSemanticsLabel = new Label("4. Use distributional semantics model to receive search term suggestions");
 
         HBox radioButtonBox = new HBox();
         radioButtonBox.setSpacing(5);
@@ -267,27 +170,13 @@ public class SearchApplicationGui extends Application {
         Button selectDisSemanticsFileButton = new Button("Upload model");
         selectDisSemanticsFileButton.setDisable(true);
         FileChooser disSemanticsFileChooser = new FileChooser();
-        selectDisSemanticsFileButton.setOnAction(event -> {
-            File file = disSemanticsFileChooser.showOpenDialog(primaryStage);
-            if (file != null) {
-                NeighbourProcessor neighbourProcessor = new NeighbourProcessor();
-                try {
-                    NeighbourSearcher neighbourSearcher = new NeighbourSearcher(neighbourProcessor.buildNeighbourMap(file, numberOfNeighboursToSuggest * 5), numberOfNeighboursToSuggest, separateSpellingSuggestions);
-                    startSearchButton.setDisable(false);
-                    queryBuilder = new QueryBuilder(neighbourSearcher);
-                    disSemanticsModelUploaded = true;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
-            }
-        });
 
         HBox boxForNumberOfNeighbour = new HBox();
         boxForNumberOfNeighbour.setSpacing(5);
         boxForNumberOfNeighbour.setVisible(false);
         TextField numberOfNeighboursTextField = new TextField();
-        Label labelForNumberOfNeighbours = new Label("number of neighbours to process");
+        Label labelForNumberOfNeighbours = new Label("Number of neighbours to process");
         boxForNumberOfNeighbour.getChildren().addAll(labelForNumberOfNeighbours, numberOfNeighboursTextField);
         numberOfNeighboursTextField.textProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -297,30 +186,103 @@ public class SearchApplicationGui extends Application {
                 } else {
 
                     selectDisSemanticsFileButton.setDisable(false);
-
                     numberOfNeighboursToSuggest = Integer.parseInt(numberOfNeighboursTextField.getText());
                 }
             }
         });
 
+
+
+
+
+        VBox topBoxForFilteringSpelling = new VBox();
+        topBoxForFilteringSpelling.setSpacing(5);
         HBox boxForFilteringSuggestions = new HBox();
+        topBoxForFilteringSpelling.getChildren().add(boxForFilteringSuggestions);
         boxForFilteringSuggestions.setSpacing(5);
         boxForFilteringSuggestions.setVisible(false);
         Label labelForFilteringSuggestion = new Label("Separate spelling variations");
+
+        TextField numberOfSpellingSuggestionsToInclude = new TextField();
+        Label maxNumberOfSpellingSuggestionsToInclude = new Label("Max number of spelling suggestions");
+        HBox boxForNumberOfSpellingSuggestions = new HBox();
+        boxForFilteringSuggestions.setSpacing(10);
+        boxForNumberOfSpellingSuggestions.getChildren().addAll(maxNumberOfSpellingSuggestionsToInclude,numberOfSpellingSuggestionsToInclude);
+        boxForNumberOfSpellingSuggestions.setVisible(false);
+
+        numberOfSpellingSuggestionsToInclude.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                if (!newValue.matches("\\d*")) {
+                    numberOfSpellingSuggestionsToInclude.setText(newValue.replaceAll("[^\\d]", ""));
+                } else {
+                    selectDisSemanticsFileButton.setDisable(false);
+                    numberOfSpellingVariationsToSuggest = Integer.parseInt(numberOfSpellingSuggestionsToInclude.getText());
+                }
+            }
+        });
+
+        TextField editDistanceForSpellingSuggestionsText = new TextField();
+        Label maxEditDistanceForSpellingVariationsLabel = new Label("Max edit distance for spelling variations");
+        HBox maxEditDistanceBox = new HBox();
+        maxEditDistanceBox.setSpacing(5);
+        maxEditDistanceBox.getChildren().addAll(maxEditDistanceForSpellingVariationsLabel,editDistanceForSpellingSuggestionsText);
+        maxEditDistanceBox.setVisible(false);
+
+        editDistanceForSpellingSuggestionsText.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                if (!newValue.matches("\\d*")) {
+                    editDistanceForSpellingSuggestionsText.setText(newValue.replaceAll("[^\\d]", ""));
+                } else {
+                    selectDisSemanticsFileButton.setDisable(false);
+                    editDistance = Integer.parseInt(editDistanceForSpellingSuggestionsText.getText());
+                }
+            }
+        });
+
+
+
+
+
         CheckBox checkBoxForFilteringSuggestions = new CheckBox();
+
+        topBoxForFilteringSpelling.getChildren().add(boxForNumberOfSpellingSuggestions);
+        topBoxForFilteringSpelling.getChildren().add(maxEditDistanceBox);
         checkBoxForFilteringSuggestions.setSelected(true);
         checkBoxForFilteringSuggestions.selectedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 if (newValue) {
                     separateSpellingSuggestions = true;
+                    boxForNumberOfSpellingSuggestions.setVisible(true);
+                    maxEditDistanceBox.setVisible(true);
                 } else {
                     separateSpellingSuggestions = false;
+                    boxForNumberOfSpellingSuggestions.setVisible(false);
+                    maxEditDistanceBox.setVisible(false);
                 }
             }
         });
         boxForFilteringSuggestions.getChildren().addAll(labelForFilteringSuggestion, checkBoxForFilteringSuggestions);
-        inputAdminGrid.add(boxForFilteringSuggestions, 0, 7);
+
+        inputAdminGrid.add(topBoxForFilteringSpelling, 0, 7);
+
+        selectDisSemanticsFileButton.setOnAction(event -> {
+            File file = disSemanticsFileChooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                NeighbourProcessor neighbourProcessor = new NeighbourProcessor();
+                try {
+                    NeighbourSearcher neighbourSearcher = new NeighbourSearcher(neighbourProcessor.buildNeighbourMap(file, numberOfNeighboursToSuggest * 5), numberOfNeighboursToSuggest, separateSpellingSuggestions, numberOfSpellingVariationsToSuggest, editDistance);
+                    startSearchButton.setDisable(false);
+                    queryBuilder = new QueryBuilder(neighbourSearcher);
+                    disSemanticsModelUploaded = true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
 
 
         HBox disSemanticsSelectionBox = new HBox();
@@ -332,19 +294,27 @@ public class SearchApplicationGui extends Application {
         group.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             @Override
             public void changed(ObservableValue<? extends Toggle> ov, Toggle t, Toggle t1) {
-                RadioButton chk = (RadioButton) t1.getToggleGroup().getSelectedToggle(); // Cast object to radio button
+                RadioButton chk = (RadioButton) t1.getToggleGroup().getSelectedToggle();
                 if (chk.getText().toString().equals("yes")) {
                     startSearchButton.setDisable(true);
                     selectDisSemanticsFileButton.setVisible(true);
                     boxForNumberOfNeighbour.setVisible(true);
                     boxForFilteringSuggestions.setVisible(true);
+                    disSemanticsModelUploaded = true;
+                    separateSpellingSuggestions=true;
+                    boxForNumberOfSpellingSuggestions.setVisible(true);
+                    maxEditDistanceBox.setVisible(true);
                 } else {
+
+                    boxForNumberOfSpellingSuggestions.setVisible(false);
+                    maxEditDistanceBox.setVisible(false);
                     startSearchButton.setDisable(false);
                     try {
                         queryBuilder = new QueryBuilder();
                         selectDisSemanticsFileButton.setVisible(false);
                         boxForNumberOfNeighbour.setVisible(false);
                         boxForFilteringSuggestions.setVisible(false);
+                        disSemanticsModelUploaded = false;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -352,40 +322,26 @@ public class SearchApplicationGui extends Application {
             }
         });
 
-        HBox boxForDownloadingCsv = new HBox();
-        boxForDownloadingCsv.setSpacing(10);
-        Label downloadResultsAsCsvLabel = new Label("6. Download results as CSV");
-        CheckBox checkboxForDownloadingResultsAsCsv = new CheckBox();
-        boxForDownloadingCsv.getChildren().addAll(downloadResultsAsCsvLabel, checkboxForDownloadingResultsAsCsv);
-        inputAdminGrid.add(boxForDownloadingCsv, 0, 9);
-        checkboxForDownloadingResultsAsCsv.selectedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                if (newValue) {
-                    exportResultsToCsv = true;
-                } else {
-                    exportResultsToCsv = false;
-                }
-            }
-        });
-
+        createSectionForCsvDownload(inputAdminGrid);
 
 
         BorderPane searchScreen = new BorderPane();
         TextField userQueryField = new TextField();
         userQueryField.setPrefWidth(700);
-        Button searchButton = new Button("Search!");
+        Button searchButton = new Button("Search");
         Pane searchScreenRoot = new HBox();
         searchScreenRoot.setPadding(DEFAULT_PADDING);
         searchScreen.setTop(searchScreenRoot);
 
         Pane searchResultsPane = new VBox();
         searchResultsPane.setPadding(DEFAULT_PADDING);
+        searchResultsPane.setMaxWidth(Double.MAX_VALUE);
+        searchResultsPane.setMaxHeight(Double.MAX_VALUE);
         searchScreen.setCenter(searchResultsPane);
         searchButton.setOnAction(event -> performSearch(primaryStage, searchResultsPane, userQueryField));
 
         BorderPane enterScreenRoot = new BorderPane();
-        Scene initialScene = new Scene(enterScreenRoot, 800, 500);
+        Scene initialScene = new Scene(enterScreenRoot, 800, 700);
         searchScreenRoot.getChildren().addAll(userQueryField, searchButton);
 
         HBox navigationButtonsBox = new HBox();
@@ -393,7 +349,14 @@ public class SearchApplicationGui extends Application {
         navigationButtonsBox.setPadding(DEFAULT_PADDING);
         Button backButton = new Button("Start again");
 
-        backButton.setOnAction(event -> primaryStage.setScene(initialScene));
+        backButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                primaryStage.setScene(initialScene);
+                searchResultsPane.getChildren().clear();
+                userQueryField.clear();
+            }
+        });
         searchScreen.setBottom(navigationButtonsBox);
 
         downloadCsv = new Button("Download CSV");
@@ -437,6 +400,144 @@ public class SearchApplicationGui extends Application {
         searchScene = new Scene(searchScreen, 1000, 1000);
         primaryStage.setResizable(true);
         primaryStage.show();
+
+         /* unused code at the moment which would be used for generating spelling suggestions for cases when there was no dist. semantics model uploaded
+        HBox boxForSuggestSpellingVariations = new HBox();
+        boxForSuggestSpellingVariations.setSpacing(10);
+        Label suggestSpellingVariationsLabel = new Label("6. Show suggestions for spelling variations");
+        CheckBox checkboxForAddingSpellingVariations = new CheckBox();
+        boxForSuggestSpellingVariations.getChildren().addAll(suggestSpellingVariationsLabel, checkboxForAddingSpellingVariations);
+        inputAdminGrid.add(boxForSuggestSpellingVariations, 0, 10);
+        checkboxForAddingSpellingVariations.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if (newValue) {
+                    showSuggestionsForSpelling = true;
+                } else {
+                    showSuggestionsForSpelling = false;
+                }
+            }
+        });
+        */
+
+    }
+
+    private void createSectionForCsvDownload(GridPane inputAdminGrid) {
+        HBox boxForDownloadingCsv = new HBox();
+        boxForDownloadingCsv.setSpacing(10);
+        Label downloadResultsAsCsvLabel = new Label("5. Download results in a CSV");
+        CheckBox checkboxForDownloadingResultsAsCsv = new CheckBox();
+        boxForDownloadingCsv.getChildren().addAll(downloadResultsAsCsvLabel, checkboxForDownloadingResultsAsCsv);
+        inputAdminGrid.add(boxForDownloadingCsv, 0, 9);
+        checkboxForDownloadingResultsAsCsv.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                if (newValue) {
+                    exportResultsToCsv = true;
+                } else {
+                    exportResultsToCsv = false;
+                }
+            }
+        });
+    }
+
+    private void generateInputOptionsForUploadingSearchFiles(Stage primaryStage, GridPane inputAdminGrid, Button startSearchButton) {
+        Label singleFileOrDirectoryLabel = new Label("3. My searchable items are represented in a:");
+        HBox radioButtonBoxFileOrDirectory = new HBox();
+        radioButtonBoxFileOrDirectory.setSpacing(5);
+        ToggleGroup groupFileOrDirectory = new ToggleGroup();
+
+
+        final RadioButton[] singleFile = {new RadioButton("single file")};
+        singleFile[0].setToggleGroup(groupFileOrDirectory);
+
+        RadioButton directory = new RadioButton("directory");
+        directory.setToggleGroup(groupFileOrDirectory);
+        directory.setSelected(true);
+        radioButtonBoxFileOrDirectory.getChildren().addAll(singleFile[0], directory);
+        inputAdminGrid.add(singleFileOrDirectoryLabel, 0, 3);
+        inputAdminGrid.add(radioButtonBoxFileOrDirectory, 2, 3);
+
+
+        final boolean[] singleFileSelection = new boolean[1];
+        singleFileSelection[0] = false;
+        groupFileOrDirectory.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+            @Override
+            public void changed(ObservableValue<? extends Toggle> observable, Toggle oldValue, Toggle newValue) {
+                RadioButton chk = (RadioButton) newValue.getToggleGroup().getSelectedToggle(); // Cast object to radio button
+                if (chk.getText().toString().equals("single file")) {
+                    singleFileSelection[0] = true;
+                } else {
+                    singleFileSelection[0] = false;
+                }
+            }
+        });
+
+
+        Label directorySelectLabel = new Label("    Select a directory/file where search items are contained");
+        openDirectoryButton.setOnAction(event -> selectDirectoryToIndex(singleFileSelection, primaryStage, startSearchButton));
+        inputAdminGrid.add(directorySelectLabel, 0, 4);
+        inputAdminGrid.add(openDirectoryButton, 2, 4);
+    }
+
+    private Button addCsvParametersToTheGridAndReturnButtonForSaving(TextField csvMessageIdTextField, TextField csvMessageTextField, Label csvMessageIdLabel, Label csvMessageLabel, GridPane grid) {
+        grid.add(csvMessageIdLabel, 1, 1);
+        grid.add(csvMessageIdTextField, 2, 1);
+
+        grid.add(csvMessageLabel, 1, 2);
+        grid.add(csvMessageTextField, 2, 2);
+        Button doneEnteringFieldValues = new Button("Done");
+        grid.add(doneEnteringFieldValues, 2, 3);
+
+        grid.setVisible(false);
+        return doneEnteringFieldValues;
+    }
+
+    private GridPane configurePaneForCsvParameters() {
+        GridPane grid = new GridPane();
+        grid.setPadding(DEFAULT_PADDING);
+        grid.setHgap(10);
+        grid.setVgap(5);
+        return grid;
+    }
+
+    private GridPane configureAdminInpoutGrid() {
+        GridPane inputAdminGrid = new GridPane();
+        inputAdminGrid.setVgap(5);
+
+        ColumnConstraints columnConstraints = new ColumnConstraints();
+        columnConstraints.setPercentWidth(60);
+        inputAdminGrid.getColumnConstraints().add(0, columnConstraints);
+
+        inputAdminGrid.setPadding(DEFAULT_PADDING);
+        inputAdminGrid.setHgap(10);
+        inputAdminGrid.setPadding(DEFAULT_PADDING);
+        return inputAdminGrid;
+    }
+
+    private void showExceptionDialog(Throwable t) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Something has gone wrong");
+        alert.setHeaderText("Unexpected exception occurred");
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        t.printStackTrace(pw);
+        String exceptionText = sw.toString();
+
+        Label label = new Label("The exception stacktrace was:");
+
+        Label textArea = new Label(exceptionText);
+
+        GridPane.setVgrow(textArea, Priority.ALWAYS);
+        GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+        GridPane expContent = new GridPane();
+        expContent.setMaxWidth(Double.MAX_VALUE);
+        expContent.add(label, 0, 0);
+        expContent.add(textArea, 0, 1);
+        alert.getDialogPane().setExpandableContent(expContent);
+        alert.showAndWait();
     }
 
     private void selectDirectoryToIndex(boolean[] singleFile, Stage primaryStage, Button startSearchButton) {
@@ -501,7 +602,7 @@ public class SearchApplicationGui extends Application {
                     labelAndSuggestionsBox.setSpacing(5);
                     Button searchAgain = new Button("Search again");
                     searchAgain.setDisable(true);
-                    Label searchForMore = new Label("Search for terms used in similar context:");
+                    Label searchForMore = new Label("Search for terms used in a similar context:");
                     labelAndSuggestionsBox.getChildren().add(searchForMore);
                     List<String> userSelectedSuggestions = new ArrayList<>();
                     FlowPane suggestionsPane = new FlowPane();
@@ -621,6 +722,8 @@ public class SearchApplicationGui extends Application {
             pagination.setPageFactory((Integer pageIndex) -> createPage(pageIndex, searchResults));
             pagination.setPadding(DEFAULT_PADDING);
             pagination.setCache(true);
+            pagination.setMaxHeight(Double.MAX_VALUE);
+            pagination.setMaxWidth(Double.MAX_VALUE);
             searchResultsPane.getChildren().addAll(resultsFoundLabel, pagination);
         }
     }
@@ -646,11 +749,11 @@ public class SearchApplicationGui extends Application {
      */
     public Pane createPage(int pageIndex, List<SearchResult> searchResults) {
 
-        VBox searchResultsPane = new VBox();
+        VBox resultsPane = new VBox();
 
         int fromIndex = pageIndex * itemsPerPage();
         int toIndex = Math.min(fromIndex + itemsPerPage(), searchResults.size());
-        searchResultsPane.getChildren().add(new Label());
+        resultsPane.getChildren().add(new Label());
         for (int i = fromIndex; i < toIndex; i++) {
             if (i < searchResults.size()) {
                 SearchResult result = searchResults.get(i);
@@ -684,7 +787,7 @@ public class SearchApplicationGui extends Application {
                     }
                 });
                 idLabel.setStyle("-fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 12pt;");
-                searchResultsPane.getChildren().add(boxForLabelAndPreview);
+                resultsPane.getChildren().add(boxForLabelAndPreview);
                 String boldStyle = "-fx-font-weight: bold;";
                 for (List<HighlightedTextFragment> text : result.getDocFragments()) {
                     TextFlow flow = new TextFlow();
@@ -701,17 +804,11 @@ public class SearchApplicationGui extends Application {
                         flow.setMaxWidth(Double.MAX_VALUE);
                         flow.setMaxHeight(Double.MAX_VALUE);
                     }
-                    searchResultsPane.getChildren().add(flow);
+                    resultsPane.getChildren().add(flow);
                 }
             }
         }
-        searchResultsPane.getChildren().add(new Label());
-        return searchResultsPane;
-    }
-
-
-    public void method() throws IOException {
-        System.out.println(Thread.currentThread().getName());
-        throw new RuntimeException();
+        resultsPane.getChildren().add(new Label());
+        return resultsPane;
     }
 }

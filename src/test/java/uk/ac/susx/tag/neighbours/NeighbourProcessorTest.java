@@ -109,13 +109,4 @@ public class NeighbourProcessorTest {
         }
     }
 
-    @Test
-    public void test() {
-        File file = FileUtils.toFile(Thread.currentThread().getContextClassLoader().getResource("neighbours/test.neighbours"));
-        Map<String, List<Neighbour>> neighbourMap = neighbourProcessor.buildNeighbourMap(file);
-        System.out.println(neighbourMap.size());
-    }
-
-
-
 }
