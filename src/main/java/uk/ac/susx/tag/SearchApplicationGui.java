@@ -150,7 +150,7 @@ public class SearchApplicationGui extends Application {
 
         generateInputOptionsForUploadingSearchFiles(primaryStage, inputAdminGrid, startSearchButton);
 
-        Label disSemanticsLabel = new Label("4. Use distributional semantics model to receive search term suggestions");
+        Label disSemanticsLabel = new Label("4. Use distributional semantics model to get search term suggestions");
 
         HBox radioButtonBox = new HBox();
         radioButtonBox.setSpacing(5);
@@ -173,9 +173,10 @@ public class SearchApplicationGui extends Application {
 
 
         HBox boxForNumberOfNeighbour = new HBox();
-        boxForNumberOfNeighbour.setSpacing(5);
+        boxForNumberOfNeighbour.setSpacing(10);
         boxForNumberOfNeighbour.setVisible(false);
         TextField numberOfNeighboursTextField = new TextField();
+        numberOfNeighboursTextField.setPrefWidth(50);
         Label labelForNumberOfNeighbours = new Label("Number of neighbours to process");
         boxForNumberOfNeighbour.getChildren().addAll(labelForNumberOfNeighbours, numberOfNeighboursTextField);
         numberOfNeighboursTextField.textProperty().addListener(new ChangeListener<String>() {
@@ -204,6 +205,7 @@ public class SearchApplicationGui extends Application {
         Label labelForFilteringSuggestion = new Label("Separate spelling variations");
 
         TextField numberOfSpellingSuggestionsToInclude = new TextField();
+        numberOfSpellingSuggestionsToInclude.setPrefWidth(50);
         Label maxNumberOfSpellingSuggestionsToInclude = new Label("Max number of spelling suggestions");
         HBox boxForNumberOfSpellingSuggestions = new HBox();
         boxForFilteringSuggestions.setSpacing(10);
@@ -223,9 +225,10 @@ public class SearchApplicationGui extends Application {
         });
 
         TextField editDistanceForSpellingSuggestionsText = new TextField();
+        editDistanceForSpellingSuggestionsText.setPrefWidth(50);
         Label maxEditDistanceForSpellingVariationsLabel = new Label("Max edit distance for spelling variations");
         HBox maxEditDistanceBox = new HBox();
-        maxEditDistanceBox.setSpacing(5);
+        maxEditDistanceBox.setSpacing(10);
         maxEditDistanceBox.getChildren().addAll(maxEditDistanceForSpellingVariationsLabel,editDistanceForSpellingSuggestionsText);
         maxEditDistanceBox.setVisible(false);
 
@@ -720,11 +723,16 @@ public class SearchApplicationGui extends Application {
             pagination = new Pagination(numberOfPages, 0);
 
             pagination.setPageFactory((Integer pageIndex) -> createPage(pageIndex, searchResults));
-            pagination.setPadding(DEFAULT_PADDING);
             pagination.setCache(true);
             pagination.setMaxHeight(Double.MAX_VALUE);
             pagination.setMaxWidth(Double.MAX_VALUE);
-            searchResultsPane.getChildren().addAll(resultsFoundLabel, pagination);
+            AnchorPane anchor  = new AnchorPane();
+            AnchorPane.setTopAnchor(pagination, 10.0);
+            AnchorPane.setRightAnchor(pagination, 10.0);
+            AnchorPane.setBottomAnchor(pagination, 10.0);
+            AnchorPane.setLeftAnchor(pagination, 10.0);
+            anchor.getChildren().addAll(pagination);
+            searchResultsPane.getChildren().addAll(resultsFoundLabel, anchor);
         }
     }
 
@@ -753,7 +761,6 @@ public class SearchApplicationGui extends Application {
 
         int fromIndex = pageIndex * itemsPerPage();
         int toIndex = Math.min(fromIndex + itemsPerPage(), searchResults.size());
-        resultsPane.getChildren().add(new Label());
         for (int i = fromIndex; i < toIndex; i++) {
             if (i < searchResults.size()) {
                 SearchResult result = searchResults.get(i);
@@ -808,6 +815,10 @@ public class SearchApplicationGui extends Application {
                 }
             }
         }
+        resultsPane.setMaxWidth(Double.MAX_VALUE);
+        resultsPane.setMaxHeight(Double.MAX_VALUE);
+        resultsPane.setPrefWidth(1000);
+        resultsPane.setPrefHeight(1000);
         resultsPane.getChildren().add(new Label());
         return resultsPane;
     }
