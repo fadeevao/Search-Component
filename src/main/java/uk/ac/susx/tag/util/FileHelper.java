@@ -4,10 +4,6 @@ package uk.ac.susx.tag.util;
 import org.apache.commons.io.FileUtils;
 import uk.ac.susx.tag.inputData.InputData;
 import uk.ac.susx.tag.inputData.TextInputData;
-import uk.ac.susx.tag.method51.core.meta.Datum;
-import uk.ac.susx.tag.method51.core.meta.Key;
-import uk.ac.susx.tag.method51.core.meta.types.RuntimeType;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -24,12 +20,6 @@ public class FileHelper {
             return null;
         }
         return new TextInputData(file.getName(), fileContents, file.getPath());
-    }
-
-    public static InputData getInputDataFromDatumObject(Datum datum, String idKey, String mainBodyKey) {
-        Key<String> mainBody = Key.of(mainBodyKey, RuntimeType.STRING);
-        Key<String> documentId = Key.of(idKey, RuntimeType.STRING);
-        return new InputData(datum.get(documentId), datum.get(mainBody));
     }
 
     private static String getFileExtension(File file) {

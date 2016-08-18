@@ -82,30 +82,6 @@ public class IndexerTest {
         exception.expect(IllegalArgumentException.class);
         reader.document(4).get("id");
     }
-/*
-    @Test
-    public void testIndexingDatumObjects() throws IOException {
-        Key<String> mainBody = Key.of("body", RuntimeType.STRING);
-        Key<String> id = Key.of("id", RuntimeType.STRING);
-        Datum datumOne = new Datum();
-        datumOne = datumOne
-                .with(mainBody, "once upon a time")
-                .with(id, "one");
-        Datum datumTwo = new Datum();
-        datumTwo = datumTwo
-                .with(mainBody, "a woodcutter lived happily with his wife")
-                .with(id, "two");
-
-
-        Directory ramDirectory = new RAMDirectory();
-        Indexer indexer = new Indexer(ramDirectory);
-        indexer.createIndex(new ArrayList<Datum>(Arrays.asList(datumOne, datumTwo)), "id", "body");
-        IndexReader reader = DirectoryReader.open(indexer.getIndexDirectory());
-        assertEquals(2, reader. numDocs());
-        assertEquals("one", reader.document(0).get("id"));
-        assertEquals("two", reader.document(1).get("id"));
-    }
-    */
 
     private CsvData getFacebookCsvData() throws IOException {
         File file = FileUtils.toFile(Thread.currentThread().getContextClassLoader().getResource("csv/facebook.csv"));

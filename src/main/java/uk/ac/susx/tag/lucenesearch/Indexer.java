@@ -17,7 +17,6 @@ import uk.ac.susx.tag.inputData.csv.CsvData;
 import uk.ac.susx.tag.inputData.csv.CsvReader;
 import uk.ac.susx.tag.inputData.pdf.PdfReader;
 import uk.ac.susx.tag.inputData.tsv.TsvReader;
-import uk.ac.susx.tag.method51.core.meta.Datum;
 import uk.ac.susx.tag.util.FileHelper;
 
 import java.io.File;
@@ -102,15 +101,6 @@ public class Indexer {
         }
         if (!indexMultipleFiles) close();
     }
-
-
-    public void createIndex(List<Datum> datumList, String idKey, String mainBodyKey) throws IOException {
-        for (Datum datum : datumList) {
-            indexData(FileHelper.getInputDataFromDatumObject(datum, idKey, mainBodyKey));
-        }
-        close();
-    }
-
 
     //Must call this.close() after this method has been invoked for N times
     public void indexData(InputData inputData) throws IOException{
